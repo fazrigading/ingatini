@@ -19,10 +19,10 @@ fi
 echo "✅ Docker and Docker Compose are installed."
 
 # Setup .env file if it doesn't exist
-if [ ! -f backend/.env ]; then
+if [ ! -f .env ]; then
     echo "📝 Creating .env file from template..."
-    cp backend/.env.example backend/.env
-    echo "⚠️  Please edit backend/.env and add your Gemini API key"
+    cp .env.example .env
+    echo "⚠️  Please edit .env and add your Gemini API key"
 fi
 
 # Start services
