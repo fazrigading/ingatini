@@ -77,3 +77,11 @@ htmlcov/
 # Uploads (temporary files)
 uploads/
 temp/
+
+# Personal note files on root folder
+/*.md
+/*.txt
+!README.md
+!GETTING_STARTED.md 
+!IMPLEMENTATION.md 
+
