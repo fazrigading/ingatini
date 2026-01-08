@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# Development workflow commands for Ingatini
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}=== Ingatini Development Commands ===${NC}\n"
+
+# Function to start development
+start() {
+    echo -e "${BLUE}Starting development environment...${NC}"
+    docker-compose up
+}
+
+# Function to stop development
+stop() {
+    echo -e "${BLUE}Stopping development environment...${NC}"
+    docker-compose down
+}
+
+# Function to view logs
+logs() {
+    echo -e "${BLUE}Showing logs...${NC}"
+    docker-compose logs -f
+}
+
+# Function to rebuild
+rebuild() {
+    echo -e "${BLUE}Rebuilding containers...${NC}"
+    docker-compose up --build
+}
+
+# Function to run migrations (placeholder)
+migrate() {
+    echo -e "${BLUE}Running database migrations...${NC}"
+    echo "⚠️  Migration system coming soon"
+}
+
+# Function to access shell
+shell() {
+    echo -e "${BLUE}Opening backend shell...${NC}"
+    docker-compose exec backend bash
+}
+
+# Function to run tests
+test() {
+    echo -e "${BLUE}Running tests...${NC}"
+    docker-compose exec backend pytest -v
+}
+
+# Function to format code
+format() {
+    echo -e "${BLUE}Formatting code...${NC}"
+    docker-compose exec backend black app/
+    docker-compose exec backend isort app/
+}
+
+# Function to lint code
+lint() {
+    echo -e "${BLUE}Linting code...${NC}"
+    docker-compose exec backend flake8 app/
+}
+
+# Display available commands
+if [ $# -eq 0 ]; then
+    cat << EOF
+${GREEN}Available commands:${NC}
+
+  ${BLUE}./dev start${NC}     - Start development server
+  ${BLUE}./dev stop${NC}      - Stop all containers
+  ${BLUE}./dev rebuild${NC}   - Rebuild and start containers
+  ${BLUE}./dev logs${NC}      - View live logs
+  ${BLUE}./dev shell${NC}     - Open backend bash shell
+  ${BLUE}./dev test${NC}      - Run tests
+  ${BLUE}./dev format${NC}    - Format code
+  ${BLUE}./dev lint${NC}      - Lint code
+
+${YELLOW}Examples:${NC}
+  ${BLUE}./dev start${NC}         # Start everything
+  ${BLUE}./dev rebuild${NC}       # Full rebuild
+  ${BLUE}./dev shell${NC}         # Access backend container
+
+${GREEN}API Documentation:${NC}
+  http://localhost:8000/docs
+
+${GREEN}Health Check:${NC}
+  curl http://localhost:8000/api/health
+EOF
+    exit 0
+fi
+
+# Execute command
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    rebuild)
+        rebuild
+        ;;
+    logs)
+        logs
+        ;;
+    shell)
+        shell
+        ;;
+    test)
+        test
+        ;;
+    format)
+        format
+        ;;
+    lint)
+        lint
+        ;;
+    migrate)
+        migrate
+        ;;
+    *)
+        echo -e "${YELLOW}Unknown command: $1${NC}"
+        echo "Run '${BLUE}./dev${NC}' for available commands"
+        exit 1
+        ;;
+esac
