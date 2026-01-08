@@ -16,7 +16,7 @@
   │   │   ├── health.py       # Health check endpoint
   │   │   ├── users.py        # User CRUD endpoints
   │   │   ├── documents.py    # Document upload & management
-  │   │   ├── query.py        # RAG query endpoint (stub)
+  │   │   ├── query.py        # RAG query endpoint
   │   │   └── __init__.py     # Router aggregation
   │   ├── core/
   │   │   ├── config.py       # Environment configuration
@@ -29,7 +29,11 @@
   │   │   ├── schemas.py      # Pydantic request/response models
   │   │   └── __init__.py
   │   └── services/
-  │       └── __init__.py     # (Placeholder for business logic)
+  │       ├── embedding_service.py
+  │       ├── rag_service.py
+  │       ├── document_service.py
+  │       ├── document_parser.py
+  │       └── text_processor.py
   ├── main.py
   ├── requirements.txt
   ├── .env.example
@@ -43,7 +47,7 @@
 - **Chunks** — Text segments with embeddings (768-dim vectors for Gemini)
 - **QueryLogs** — Query history and analytics
 
-#### API Endpoints (Stubbed)
+#### API Endpoints (Fully Implemented)
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | GET | `/api/health` | Service health check |
@@ -55,6 +59,7 @@
 | GET | `/api/documents/{doc_id}` | Get document details |
 | DELETE | `/api/documents/{doc_id}` | Delete document |
 | POST | `/api/query/` | Query documents (RAG) |
+| GET | `/api/query/history/{user_id}` | Query history |
 
 #### Configuration Files
 - `requirements.txt` — All Python dependencies (FastAPI, LangChain, pgvector, etc.)
@@ -65,38 +70,100 @@
 
 #### Documentation
 - `backend/README.md` — Backend setup guide
-- `frontend/README.md` — Frontend placeholder
+- `frontend/README.md` — Frontend setup guide
 - `README_SETUP.md` — Full project setup instructions
 - `.gitignore` — Git exclusions
 
 ---
 
+## Phase 2: Embedding Pipeline & RAG Core ✅
+
+### Text Processing & Document Extraction
+- Document parser for PDF, DOCX, TXT files
+- Text chunking with configurable overlap (512 chars, 50 char overlap)
+- Text cleaning and normalization
+
+### Embedding Generation
+- Gemini embeddings API integration (models/embedding-001)
+- Vector storage in PostgreSQL with pgvector
+- Efficient similarity search using pgvector operators
+
+### Document Upload Pipeline
+- File validation and type detection
+- Automatic text extraction
+- Chunk generation with metadata
+- Embedding generation and storage
+- Async processing support
+
+---
+
+## Phase 3: Query/Retrieval Engine ✅
+
+### Vector Similarity Search
+- pgvector-based nearest neighbor search
+- Configurable result limits (top-k retrieval)
+- Distance-based ranking
+
+### RAG Pipeline
+- Query embedding generation
+- Relevant chunk retrieval
+- Context building from chunks
+- LLM augmentation with Gemini (gemini-pro)
+- Response generation with source attribution
+
+### Query Logging & Analytics
+- Query history storage
+- Response metadata tracking
+- Retrieved chunk logging
+
+---
+
+## Phase 4: Frontend Application ✅
+
+### React/Vite Setup
+- React 19.2 with Vite 7.3 build tool
+- Tailwind CSS 4 for styling
+- Axios for API communication
+
+### Components Implemented
+- **DocumentUpload** — File selection, drag-and-drop, upload progress
+- **ChatInterface** — Real-time message display, source attribution, query input
+- **QueryHistory** — Past queries, responses, timestamps, chunk counts
+- **Main App** — User management, component orchestration, health checks
+
+### Features
+- ✓ Full API integration with all 10 endpoints
+- ✓ Responsive design (mobile to desktop)
+- ✓ Loading states and error handling
+- ✓ Source attribution display
+- ✓ Automatic document list refresh
+- ✓ Production build optimization
+
+### Styling & UX
+- Blue/indigo color scheme
+- Gradient backgrounds
+- Smooth transitions
+- Accessibility features
+- Mobile-responsive layout
+
+---
+
 ## Next Steps
 
-### Phase 2: Embedding Pipeline & RAG Core
-- [ ] Create `DocumentService` for text extraction (PDF, DOCX, TXT)
-- [ ] Implement text chunking/splitting logic
-- [ ] Integrate Gemini embeddings API
-- [ ] Store embeddings in PostgreSQL with pgvector
-- [ ] Complete `/documents/upload` endpoint flow
+### Phase 5: Authentication (Optional)
+- [ ] User registration with JWT
+- [ ] Protected routes
+- [ ] User login/logout
 
-### Phase 3: Query/Retrieval Engine
-- [ ] Implement vector similarity search
-- [ ] Integrate LangChain for RAG retrieval
-- [ ] Add LLM augmentation (Gemini)
-- [ ] Complete `/query/` endpoint with full RAG pipeline
-- [ ] Add query logging and analytics
-
-### Phase 4: Frontend
-- [ ] Create React/Vite SPA
-- [ ] Build document upload UI
-- [ ] Build chat interface with source attribution
-- [ ] Connect to backend API
-
-### Phase 5: Deployment & Automation
-- [ ] Docker image optimization
+### Phase 6: Deployment
+- [ ] Docker production optimization
 - [ ] Free hosting setup (Render, Railway, Vercel)
-- [ ] n8n automation workflows (optional post-MVP)
+- [ ] Environment configuration
+
+### Phase 7: Automation (Post-Launch)
+- [ ] n8n automation workflows
+- [ ] Document upload triggers
+- [ ] Database updates
 
 ---
 
@@ -106,22 +173,26 @@
 # From project root
 docker compose up
 
+# In another terminal, start frontend
+cd frontend
+npm install  # (first time only)
+npm run dev
+
 # API docs available at:
 # http://localhost:8000/docs
 
-# Create a test user:
-curl -X POST http://localhost:8000/api/users/ \
-  -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "email": "test@example.com"}'
+# Frontend available at:
+# http://localhost:5173
 ```
 
 ---
 
 ## Current Status
-✅ Project structure initialized
-✅ Database schema designed
-✅ API stubs created
-⏳ Ready for embedding pipeline implementation
+✅ Phase 1: Backend & Database - Complete
+✅ Phase 2: Embedding Pipeline - Complete
+✅ Phase 3: RAG Query Engine - Complete
+✅ Phase 4: Frontend Application - Complete
+⏳ Ready for end-to-end testing & deployment
 
 ---
 
@@ -138,4 +209,4 @@ curl -X POST http://localhost:8000/api/users/ \
 - [ ] Secrets: VITE_API_URL (production backend URL)
 - [ ] .env.production template: (To be created)
 
-## To be completed in Phase 4
+## To be completed in Phase 6

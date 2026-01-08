@@ -9,15 +9,16 @@ Complete guide for setting up and running the project
 
 Ingatini is a lightweight Retrieval-Augmented Generation (RAG) application that allows users to upload documents and ask questions about them using AI.
 
-**Current Status**: Phase 3 ✅ Complete RAG query engine (vector search, LLM augmentation)
+**Current Status**: Phase 4 ✅ Complete Full-Stack Application (Backend + Frontend)
 
 ---
 
 ## Prerequisites
 
 - Docker & Docker Compose
-- Python 3.13+ (for local development)
-- Gemini API key (or configure alternative LLM)
+- Node.js 18+ (for frontend development)
+- Python 3.13+ (for local backend development)
+- Gemini API key
 - Git
 
 ---
@@ -36,27 +37,37 @@ cp .env.example .env
 nano .env  # or your favorite editor
 ```
 
-### 2. Start Services
+### 2. Start Backend Services
 
 ```bash
 # Option A: Using our dev helper
 ./dev start
 
-# Option B: Using docker compose directly
+# Option B: Using Docker Compose V2
 docker compose up
 
 # Option C: Using the shell script
 bash start.sh
 ```
 
-### 3. Verify Setup
+### 3. Start Frontend (in another terminal)
 
 ```bash
-# Check API health
-curl http://localhost:8000/api/health
+cd frontend
 
-# Open API documentation
-http://localhost:8000/docs
+# Install dependencies (first time only)
+npm install
+
+# Start development server
+npm run dev
+```
+
+### 4. Access the Application
+
+```
+Backend API: http://localhost:8000
+API Docs: http://localhost:8000/docs
+Frontend App: http://localhost:5173
 ```
 
 ---
@@ -104,6 +115,20 @@ uvicorn main:app --reload
 
 The API will be available at `http://localhost:8000`
 
+### 4. Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
 ---
 
 ## Development Commands
@@ -123,6 +148,24 @@ The API will be available at `http://localhost:8000`
 ./dev test        # Run tests
 ./dev format      # Format code (black, isort)
 ./dev lint        # Lint code (flake8)
+```
+
+### Frontend Development Commands
+
+```bash
+cd frontend
+
+# Start dev server with HMR
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Format code
+npm run format
 ```
 
 ### Manual Docker Commands
@@ -162,7 +205,23 @@ ingatini/
 │   ├── .env.example
 │   ├── Dockerfile
 │   └── README.md
-├── frontend/                  # React/Vue frontend (TODO)
+│
+├── frontend/                  # React/Vite frontend
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   ├── services/          # API client
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   ├── .env.example
+│   ├── README.md
+│   └── dist/                  # Build output
+│
 ├── docker-compose.yml         # Dev environment
 ├── GETTING_STARTED.md         # Setup guide
 ├── IMPLEMENTATION.md          # Progress tracking
@@ -220,6 +279,9 @@ POST /api/query/
   "user_id": 1,
   "query_text": "What is the main topic?"
 }
+
+# Get query history
+GET /api/query/history/{user_id}
 ```
 
 ---
@@ -249,26 +311,27 @@ BACKEND_PORT=8000
 
 ---
 
-## Testing the API
+## Testing the Application
 
-### Using cURL
+### End-to-End Workflow
 
-```bash
-# Health check
-curl http://localhost:8000/api/health
+1. **Create User**
+   ```bash
+   curl -X POST http://localhost:8000/api/users/ \
+     -H "Content-Type: application/json" \
+     -d '{"username": "testuser", "email": "test@example.com"}'
+   ```
 
-# Create user
-curl -X POST http://localhost:8000/api/users/ \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "testuser",
-    "email": "test@example.com"
-  }'
+2. **Upload Document** (via Frontend)
+   - Go to http://localhost:5173
+   - Click "Upload Document"
+   - Select PDF, DOCX, or TXT file
+   - Wait for processing
 
-# Upload document
-curl -X POST http://localhost:8000/api/documents/upload?user_id=1 \
-  -F "file=@/path/to/document.txt"
-```
+3. **Ask Question** (via Frontend)
+   - Type question in chat interface
+   - View answer with source attribution
+   - Check query history
 
 ### Using Swagger UI
 
@@ -278,10 +341,12 @@ Visit `http://localhost:8000/docs` to interact with the API through the web inte
 
 ## Next Steps
 
-- [x] **Phase 2**: Implement embedding pipeline (document parsing, text chunking, Gemini embeddings)
-- [x] **Phase 3**: Complete RAG query engine (vector search, LLM augmentation)
-- [ ] **Phase 4**: Build frontend (React/Vue upload and chat UI)
-- [ ] **Phase 5**: Deploy to free hosting (Render, Railway, Vercel)
+- [x] **Phase 1**: Backend structure & database
+- [x] **Phase 2**: Embedding pipeline
+- [x] **Phase 3**: RAG query engine
+- [x] **Phase 4**: Frontend application
+- [ ] **Phase 5**: Authentication (optional)
+- [ ] **Phase 6**: Deploy to production
 
 See `IMPLEMENTATION.md` for detailed progress tracking.
 
@@ -301,6 +366,17 @@ sudo chmod +x dev start.sh
 
 # Port already in use
 docker compose down
+```
+
+### Frontend Issues
+
+```bash
+# Modules not found
+cd frontend
+npm install
+
+# Port 5173 in use
+npm run dev -- --port 5174
 ```
 
 ### Database Issues
@@ -363,6 +439,8 @@ CORS_ORIGINS=["http://localhost:3000", "http://localhost:5173"]
 ## Resources
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [React Documentation](https://react.dev/)
+- [Vite Documentation](https://vitejs.dev/)
 - [LangChain Documentation](https://python.langchain.com/)
 - [PostgreSQL pgvector](https://github.com/pgvector/pgvector)
 - [Gemini API Reference](https://ai.google.dev/docs)
