@@ -15,8 +15,8 @@ A lightweight Retrieval-Augmented Generation (RAG) application for uploading doc
 | Phase | Task | Status |
 |-------|------|--------|
 | 1 | Backend structure & DB schema | ✅ Complete |
-| 2 | Embedding pipeline & document processing | ⏳ In Progress |
-| 3 | RAG query engine & retrieval | ⏳ Next |
+| 2 | Embedding pipeline & document processing | ✅ Complete |
+| 3 | RAG query engine & retrieval | ✅ Complete |
 | 4 | Frontend UI (React/Vite) | ⏳ Next |
 | 5 | Deployment & automation | 📅 Post-launch |
 
