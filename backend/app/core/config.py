@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://user:password@localhost:5432/ingatini_db"
 
     # Google Gemini
-    google_api_key: str = ""
+    gemini_api_key: str = ""
     gemini_embedding_model: str = "models/embedding-001"
     gemini_llm_model: str = "gemini-pro"
 

@@ -24,11 +24,11 @@ class EmbeddingService:
         if genai is None:
             raise ImportError("google-generativeai is required. Install with: pip install google-generativeai")
         
-        if not self.settings.google_api_key:
+        if not self.settings.gemini_api_key:
             raise ValueError("GEMINI_API_KEY not configured")
         
         # Configure Gemini client
-        genai.configure(api_key=self.settings.google_api_key)
+        genai.configure(api_key=self.settings.gemini_api_key)
 
     def generate_embedding(self, text: str) -> List[float]:
         """
@@ -37,7 +37,7 @@ class EmbeddingService:
         Returns:
             List of floats representing the embedding vector
         """
-        if not self.settings.google_api_key:
+        if not self.settings.gemini_api_key:
             raise ValueError("GEMINI_API_KEY not configured")
         
         try:

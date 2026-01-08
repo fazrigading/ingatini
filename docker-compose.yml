@@ -22,7 +22,7 @@ services:
     container_name: ingatini_backend
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/ingatini_db
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
       DEBUG: "true"
     env_file:
       - .env

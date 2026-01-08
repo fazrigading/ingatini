@@ -28,7 +28,7 @@ class RAGService:
         if genai is None:
             raise ImportError("google-generativeai is required")
         
-        genai.configure(api_key=self.settings.google_api_key)
+        genai.configure(api_key=self.settings.gemini_api_key)
 
     def query_documents(
         self,
