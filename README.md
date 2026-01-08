@@ -27,7 +27,7 @@ A lightweight Retrieval-Augmented Generation (RAG) application for uploading doc
 cd /home/fazrigading/Projects/ingatini
 
 # Copy environment template
-cp backend/.env.example backend/.env
+cp .env.example .env
 
 # Start with Docker
 docker compose up
@@ -118,7 +118,7 @@ POST   /api/query/                  # Query documents (RAG)
 
 ## ⚙️ Configuration
 
-Create `backend/.env` from `backend/.env.example`:
+Create `.env` from `.env.example`:
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/ingatini_db
