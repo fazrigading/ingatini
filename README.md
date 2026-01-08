@@ -1,14 +1,15 @@
 # Ingatini: A Personal Knowledge Search Engine
 
-A lightweight Retrieval-Augmented Generation (RAG) application for uploading documents and asking AI-powered questions about them. Built with FastAPI, LangChain, PostgreSQL, and Gemini.
+A complete Retrieval-Augmented Generation (RAG) application for uploading documents and asking AI-powered questions about them. Full-stack implementation with FastAPI backend, React frontend, PostgreSQL database, and Google Gemini API.
 
 ## 🎯 Core Idea
 
-1. User uploads documents (PDF, DOCX, TXT)
-2. System extracts text and creates embeddings
+1. User registers and uploads documents (PDF, DOCX, TXT)
+2. System extracts text and creates embeddings via Gemini API
 3. Embeddings stored in PostgreSQL with pgvector
-4. User asks questions via chat interface
-5. RAG pipeline retrieves relevant chunks and augments LLM response
+4. User asks questions via React chat interface
+5. RAG pipeline retrieves relevant chunks and augments Gemini response with context
+6. Source attribution shows which documents contributed to each answer
 
 ## 📋 Project Status
 
@@ -17,68 +18,122 @@ A lightweight Retrieval-Augmented Generation (RAG) application for uploading doc
 | 1 | Backend structure & DB schema | ✅ Complete |
 | 2 | Embedding pipeline & document processing | ✅ Complete |
 | 3 | RAG query engine & retrieval | ✅ Complete |
-| 4 | Frontend UI (React/Vite) | ⏳ Next |
-| 5 | Deployment & automation | 📅 Post-launch |
+| 4 | Frontend UI (React/Vite) | ✅ Complete |
+| 5 | Authentication (Optional) | 📅 Future |
+
+**Overall Progress:** 80% Complete (Full Stack MVP Ready)
 
 ## 🚀 Quick Start
 
+### Prerequisites
+- Docker & Docker Compose
+- Node.js 18+ (for frontend dev)
+- GEMINI_API_KEY environment variable
+
+### Run Full Stack
+
 ```bash
-# Clone and setup
-cd /home/fazrigading/Projects/ingatini
-
-# Copy environment template
-cp .env.example .env
-
-# Start with Docker
+# 1. Start backend and database
 docker compose up
 
-# Or use the helper script
-./dev start
+# 2. In another terminal, start frontend
+cd frontend
+npm install  # (first time only)
+npm run dev
 ```
 
-**API Documentation**: http://localhost:8000/docs  
-**Health Check**: `curl http://localhost:8000/api/health`
+**Backend API**: http://localhost:8000  
+**API Docs**: http://localhost:8000/docs  
+**Frontend App**: http://localhost:5173
 
-See [GETTING_STARTED.md](GETTING_STARTED.md) for detailed setup instructions.
+See [END_TO_END_TESTING.md](END_TO_END_TESTING.md) for complete testing guide.
 
 ## 🏗️ Architecture
 
-### Backend
-- **Framework**: FastAPI (Python)
-- **ORM**: SQLAlchemy with PostgreSQL
-- **Vector Storage**: pgvector (768-dim embeddings)
-- **RAG Pipeline**: LangChain with Gemini
-- **API**: RESTful with automatic docs
+### Backend Stack
+- **Framework**: FastAPI 0.109.0 (Python async)
+- **Database**: PostgreSQL 15 + pgvector 0.2.4
+- **ORM**: SQLAlchemy 2.0.23
+- **AI**: Google Gemini API (embeddings + LLM)
+- **RAG**: LangChain + custom pipeline
+- **API**: RESTful with Swagger/OpenAPI docs
 
-### Database
-- **Users** — User accounts
-- **Documents** — Document metadata
-- **Chunks** — Text segments with embeddings
-- **QueryLogs** — Query history for analytics
+### Frontend Stack
+- **Framework**: React 19.2.0
+- **Build Tool**: Vite 7.3.1
+- **Styling**: Tailwind CSS 4.x
+- **HTTP Client**: Axios
+- **State**: React hooks (useState, useEffect, useRef)
 
-### Frontend (TODO)
-- **Framework**: React/Vite
-- **UI**: Clean, minimal interface
-- **Features**: Document upload, chat with source attribution
+### Database Schema
+- **Users** — User accounts & session management
+- **Documents** — Document metadata, file info, chunk count
+- **Chunks** — Text segments (512 chars, 50 char overlap) with 768-dim embeddings
+- **QueryLogs** — Query history with responses, timing, source attribution
 
 ## 📁 Project Structure
 
 ```
 ingatini/
-├── backend/              # FastAPI application
+├── backend/                    # FastAPI application
 │   ├── app/
-│   │   ├── core/        # Config & database
-│   │   ├── api/         # Endpoints
-│   │   ├── schemas/     # Pydantic models
-│   │   ├── models/      # DB models
-│   │   └── services/    # Business logic
-│   ├── main.py
-│   └── requirements.txt
-├── frontend/            # React/Vite (TODO)
-├── docker-compose.yml   # Dev environment
-├── GETTING_STARTED.md   # Setup guide
-├── IMPLEMENTATION.md    # Progress tracking
-└── dev                  # Development helper
+│   │   ├── core/
+│   │   │   ├── config.py      # Settings from environment
+│   │   │   └── database.py    # SQLAlchemy setup
+│   │   ├── api/               # Endpoint handlers
+│   │   │   ├── users.py
+│   │   │   ├── documents.py
+│   │   │   ├── query.py
+│   │   │   └── health.py
+│   │   ├── schemas/           # Pydantic models (request/response)
+│   │   ├── models/            # SQLAlchemy ORM models
+│   │   └── services/          # Business logic
+│   │       ├── embedding_service.py    # Gemini embeddings
+│   │       ├── rag_service.py          # RAG pipeline
+│   │       ├── document_service.py
+│   │       ├── document_parser.py      # PDF/DOCX/TXT extraction
+│   │       └── text_processor.py       # Chunking & normalization
+│   ├── main.py                # FastAPI app entry point
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── README.md
+│
+├── frontend/                  # React + Vite app
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── DocumentUpload.jsx     # File upload interface
+│   │   │   ├── ChatInterface.jsx      # Chat & query interface
+│   │   │   └── QueryHistory.jsx       # Past queries display
+│   │   ├── services/
+│   │   │   └── api.js                 # Axios API client
+│   │   ├── App.jsx            # Main app component
+│   │   ├── App.css
+│   │   ├── index.css          # Global + Tailwind styles
+│   │   └── main.jsx           # React entry point
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   ├── .env.example
+│   └── README.md
+│
+├── docker-compose.yml          # Development environment
+├── .env                        # Environment variables (git ignored)
+├── .env.example                # Environment template
+│
+├── Documentation/
+│   ├── README.md              # This file
+│   ├── GETTING_STARTED.md     # Setup & configuration guide
+│   ├── STATUS.md              # Current completion status
+│   ├── IMPLEMENTATION.md      # Detailed progress tracking
+│   ├── COMPLETION_SUMMARY.md  # Phase-by-phase summary
+│   ├── PHASE4_COMPLETION.md   # Frontend phase details
+│   ├── END_TO_END_TESTING.md  # Complete testing guide
+│   ├── QUICK_REF.sh           # Quick reference
+│   └── FRONTEND_GUIDE.md      # Frontend setup guide
+│
+├── dev                        # Development CLI helper script
+└── start.sh                   # Quick start script
 ```
 
 ## 🔧 Development
