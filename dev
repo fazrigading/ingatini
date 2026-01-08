@@ -14,25 +14,25 @@ echo -e "${BLUE}=== Ingatini Development Commands ===${NC}\n"
 # Function to start development
 start() {
     echo -e "${BLUE}Starting development environment...${NC}"
-    docker-compose up
+    docker compose up
 }
 
 # Function to stop development
 stop() {
     echo -e "${BLUE}Stopping development environment...${NC}"
-    docker-compose down
+    docker compose down
 }
 
 # Function to view logs
 logs() {
     echo -e "${BLUE}Showing logs...${NC}"
-    docker-compose logs -f
+    docker compose logs -f
 }
 
 # Function to rebuild
 rebuild() {
     echo -e "${BLUE}Rebuilding containers...${NC}"
-    docker-compose up --build
+    docker compose up --build
 }
 
 # Function to run migrations (placeholder)
@@ -44,26 +44,26 @@ migrate() {
 # Function to access shell
 shell() {
     echo -e "${BLUE}Opening backend shell...${NC}"
-    docker-compose exec backend bash
+    docker compose exec backend bash
 }
 
 # Function to run tests
 test() {
     echo -e "${BLUE}Running tests...${NC}"
-    docker-compose exec backend pytest -v
+    docker compose exec backend pytest -v
 }
 
 # Function to format code
 format() {
     echo -e "${BLUE}Formatting code...${NC}"
-    docker-compose exec backend black app/
-    docker-compose exec backend isort app/
+    docker compose exec backend black app/
+    docker compose exec backend isort app/
 }
 
 # Function to lint code
 lint() {
     echo -e "${BLUE}Linting code...${NC}"
-    docker-compose exec backend flake8 app/
+    docker compose exec backend flake8 app/
 }
 
 # Display available commands

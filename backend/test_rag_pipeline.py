@@ -202,7 +202,7 @@ def run_all_tests():
         print(f"\n❌ Assertion failed: {e}")
     except requests.exceptions.ConnectionError:
         print("\n❌ Connection error - Make sure the server is running:")
-        print("   docker-compose up")
+        print("   docker compose up")
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback

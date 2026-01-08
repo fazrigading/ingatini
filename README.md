@@ -30,7 +30,7 @@ cd /home/fazrigading/Projects/ingatini
 cp backend/.env.example backend/.env
 
 # Start with Docker
-docker-compose up
+docker compose up
 
 # Or use the helper script
 ./dev start

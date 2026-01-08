@@ -25,7 +25,7 @@ cp .env.example .env
 
 ```bash
 # From project root
-docker-compose up
+docker compose up
 ```
 
 Or run locally:
