@@ -10,7 +10,7 @@ class UserBase(BaseModel):
     """Base user schema."""
 
     username: str = Field(..., min_length=3, max_length=255)
-    email: str = Field(..., regex=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+    email: str = Field(..., pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 class UserCreate(UserBase):
