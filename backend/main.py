@@ -20,7 +20,7 @@ Base.metadata.create_all(bind=engine)
 # Create FastAPI app instance
 app = FastAPI(
     title="Ingatini RAG API",
-    description="A personal knowledge search engine using Light RAG",
+    description="A Gemini-powered personal knowledge search engine using Light RAG",
     version="0.1.0",
     debug=settings.debug,
 )
