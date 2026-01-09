@@ -17,7 +17,7 @@ Ingatini is a lightweight Retrieval-Augmented Generation (RAG) application that 
 
 - Docker & Docker Compose
 - Node.js 18+ (for frontend development)
-- Python 3.13+ (for local backend development)
+- Python 3.11+ (for local backend development)
 - Gemini API key
 - Git
 
