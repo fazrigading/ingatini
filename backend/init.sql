@@ -1,4 +1,3 @@
-"""PostgreSQL initialization script."""
 -- Create database if it doesn't exist
 CREATE DATABASE ingatini_db;
 
