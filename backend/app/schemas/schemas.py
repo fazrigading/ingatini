@@ -1,4 +1,3 @@
-"""Pydantic schemas for API request/response validation."""
 from datetime import datetime
 from typing import Optional
 

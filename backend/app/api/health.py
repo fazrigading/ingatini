@@ -1,4 +1,3 @@
-"""Health check and utility endpoints."""
 from fastapi import APIRouter
 
 router = APIRouter(tags=["health"])

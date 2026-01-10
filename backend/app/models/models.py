@@ -1,4 +1,3 @@
-"""Database models for documents, chunks, embeddings, and user data."""
 from datetime import datetime
 from typing import Optional
 
@@ -60,8 +59,8 @@ class Chunk(Base):
     chunk_index = Column(Integer, nullable=False)  # Order of chunk in document
     content = Column(Text, nullable=False)
     token_count = Column(Integer, nullable=True)  # Approximate token count
-    embedding = Column(Vector(768), nullable=True)  # Gemini embedding-001
-    embedding_model = Column(String(100), default="text-embedding-3-small")
+    embedding = Column(Vector(768), nullable=True)  # gemini-embedding-1.0
+    embedding_model = Column(String(100), default="gemini-embedding-1.0")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships

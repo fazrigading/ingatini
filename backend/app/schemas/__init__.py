@@ -1,4 +1,3 @@
-"""Export schemas."""
 from app.schemas.schemas import (
     ChunkResponse,
     DocumentCreate,

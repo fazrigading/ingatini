@@ -1,4 +1,3 @@
-"""RAG query service for retrieval-augmented generation."""
 import logging
 from typing import List, Optional
 

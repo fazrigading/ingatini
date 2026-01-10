@@ -1,4 +1,3 @@
-"""Document management endpoints."""
 import logging
 from io import BytesIO
 

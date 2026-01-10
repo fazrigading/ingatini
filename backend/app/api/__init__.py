@@ -1,4 +1,3 @@
-"""API routers."""
 from fastapi import APIRouter
 
 from app.api import documents, health, query, users

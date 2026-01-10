@@ -1,4 +1,3 @@
-"""Document parsing utilities for various file formats."""
 import io
 from typing import Optional
 

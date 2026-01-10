@@ -1,4 +1,3 @@
-"""Query/retrieval endpoints for RAG."""
 import logging
 from typing import List, Optional
 
