@@ -296,8 +296,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/ingatini_db
 
 # Gemini API
 GEMINI_API_KEY=your_key_here
-GEMINI_EMBEDDING_MODEL=models/embedding-001
-GEMINI_LLM_MODEL=gemini-pro
+GEMINI_EMBEDDING_MODEL=models/gemini-embedding-1.0
+GEMINI_LLM_MODEL=gemini-3-flash
 
 # Application
 DEBUG=True

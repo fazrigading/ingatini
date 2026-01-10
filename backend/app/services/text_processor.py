@@ -1,19 +1,14 @@
-"""Text processing utilities for document embedding."""
 import re
 from typing import List
 
 
 def clean_text(text: str) -> str:
-    """Clean and normalize text."""
-    # Remove extra whitespace
-    text = re.sub(r'\s+', ' ', text)
-    # Remove special characters but keep basic punctuation
-    text = re.sub(r'[^\w\s\.\,\!\?\-]', '', text)
+    text = re.sub(r'\s+', ' ', text) # Remove extra whitespace
+    text = re.sub(r'[^\w\s\.\,\!\?\-]', '', text) # Remove special characters but keep basic punctuation
     return text.strip()
 
 
 def split_into_sentences(text: str) -> List[str]:
-    """Split text into sentences."""
     # Simple sentence splitting on periods, question marks, exclamation marks
     sentences = re.split(r'(?<=[.!?])\s+', text)
     return [s.strip() for s in sentences if s.strip()]
