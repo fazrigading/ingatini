@@ -84,7 +84,7 @@
 - Text cleaning and normalization
 
 ### Embedding Generation
-- Gemini embeddings API integration (models/embedding-001)
+- Gemini embeddings API integration (models/gemini-embedding-1.0)
 - Vector storage in PostgreSQL with pgvector
 - Efficient similarity search using pgvector operators
 
@@ -188,10 +188,15 @@ npm run dev
 ---
 
 ## Current Status
+
 ✅ Phase 1: Backend & Database - Complete
+
 ✅ Phase 2: Embedding Pipeline - Complete
+
 ✅ Phase 3: RAG Query Engine - Complete
+
 ✅ Phase 4: Frontend Application - Complete
+
 ⏳ Ready for end-to-end testing & deployment
 
 ---

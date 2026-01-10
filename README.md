@@ -166,8 +166,8 @@ POST   /api/query/                  # Query documents (RAG)
 | **Database** | PostgreSQL 15 + pgvector |
 | **ORM** | SQLAlchemy 2.0 |
 | **RAG** | LangChain + Gemini |
-| **Embedding** | embedding-001 |
-| **LLM** | gemini-pro |
+| **Embedding** | gemini-embedding-1.0 |
+| **LLM** | gemini-3-flash |
 | **Frontend** | React/Vite (TODO) |
 | **Containerization** | Docker + Docker Compose |
 
@@ -178,8 +178,8 @@ Create `.env` from `.env.example`:
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/ingatini_db
 GEMINI_API_KEY=your_key_here
-GEMINI_EMBEDDING_MODEL=models/embedding-001
-GEMINI_LLM_MODEL=gemini-pro
+GEMINI_EMBEDDING_MODEL=gemini-embedding-1.0
+GEMINI_LLM_MODEL=gemini-3-flash
 DEBUG=True
 ```
 
