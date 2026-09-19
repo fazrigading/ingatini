@@ -86,3 +86,6 @@ temp/
 !IMPLEMENTATION.md 
 .claude
 
+
+# Command Code local data
+.commandcode/
