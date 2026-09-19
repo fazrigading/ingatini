@@ -1,64 +1,69 @@
-"""Python project README with development guide."""
 # Ingatini Backend
 
-Light RAG application backend built with FastAPI, LangChain, and PostgreSQL.
+FastAPI backend for the Ingatini RAG application: JWT auth, document
+ingestion, pgvector search, and Gemini-powered answers.
 
-## Quick Start
+## Quick start
 
-### 1. Setup Environment
+### With Docker (from repo root)
+
+```bash
+docker compose up          # Postgres + backend with --reload
+```
+
+### Local
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-### 2. Configure Environment
-
-```bash
-cp .env.example .env
-# Edit .env and add your Gemini API key
-```
-
-### 3. Run with Docker Compose
-
-```bash
-# From project root
-docker compose up
-```
-
-Or run locally:
-
-```bash
-# Setup PostgreSQL first
-# Then run the app
+cp .env.example .env       # set GEMINI_API_KEY and JWT_SECRET
 uvicorn main:app --reload
 ```
 
-## Project Structure
+API and Swagger UI: http://localhost:8000/docs (routes are mounted under `/api`).
+
+## Environment
+
+| Variable | Required | Notes |
+|----------|----------|-------|
+| `DATABASE_URL` | yes | Postgres with pgvector |
+| `GEMINI_API_KEY` | yes | Embeddings + LLM |
+| `JWT_SECRET` | yes | Any long random string; tokens invalidate if it changes |
+| `JWT_EXPIRE_MINUTES` | no | Default 1440 (24 h) |
+| `GEMINI_EMBEDDING_MODEL` / `GEMINI_LLM_MODEL` | no | Defaults: `models/gemini-embedding-001`, `gemini-2.0-flash` |
+| `DEBUG`, `LOG_LEVEL`, `CORS_ORIGINS` | no | See `app/core/config.py` |
+
+## Layout
 
 ```
 backend/
 ├── app/
-│   ├── core/          # Configuration & database setup
-│   ├── api/           # API routes & endpoints
-│   ├── schemas/       # Pydantic models for validation
-│   ├── services/      # Business logic & RAG pipeline
-│   └── models/        # SQLAlchemy database models
-├── main.py            # FastAPI application entry point
-├── requirements.txt   # Python dependencies
-└── Dockerfile         # Container configuration
+│   ├── api/          # Routers: auth.py, documents.py, query.py, health.py; deps.py (get_current_user)
+│   ├── core/         # config.py (env settings), database.py, security.py (JWT + bcrypt)
+│   ├── models/       # SQLAlchemy models: User, Document, Chunk, QueryLog
+│   ├── schemas/      # Pydantic request/response models
+│   └── services/     # embedding_service, rag_service, document_parser,
+│                     # text_processor, document_service, errors.py
+├── tests/            # pytest suite
+├── main.py           # App entry: CORS, create_all, router wiring
+└── requirements.txt
 ```
 
-## API Documentation
+## Testing
 
-Once running, visit: `http://localhost:8000/docs`
+```bash
+pytest            # from backend/, with the venv active
+```
 
-## Next Steps
+18 unit tests cover password/token handling, text chunking, and the embedding
+service (dimension pinning, batching, retries) with a faked Gemini client —
+no network or database needed. Full E2E walkthrough: [../docs/TESTING.md](../docs/TESTING.md).
 
-- [ ] Create database models for documents, chunks, and embeddings
-- [ ] Implement document upload and text extraction
-- [ ] Build embedding pipeline with LangChain
-- [ ] Create RAG query endpoint
-- [ ] Add authentication/authorization
+## Notes
+
+- Tables are created via `Base.metadata.create_all` at startup — dev-only
+  convenience; production should use Alembic (pinned but unconfigured).
+- Handlers are plain `def` on purpose: sync DB/Gemini work runs in FastAPI's
+  threadpool instead of blocking the event loop.
+- Upload pipeline rolls back the document row on any processing failure.

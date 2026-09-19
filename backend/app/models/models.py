@@ -1,5 +1,4 @@
-"""Database models for documents, chunks, embeddings, and user data."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pgvector.sqlalchemy import Vector
@@ -7,6 +6,10 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Tex
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class User(Base):
@@ -17,8 +20,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True, index=True)
     email = Column(String(255), unique=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    password_hash = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     documents = relationship("Document", back_populates="user")
@@ -39,8 +43,8 @@ class Document(Base):
     file_size = Column(Integer, nullable=True)  # in bytes
     content_type = Column(String(100), nullable=True)
     total_chunks = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     # Relationships
     user = relationship("User", back_populates="documents")
@@ -60,9 +64,9 @@ class Chunk(Base):
     chunk_index = Column(Integer, nullable=False)  # Order of chunk in document
     content = Column(Text, nullable=False)
     token_count = Column(Integer, nullable=True)  # Approximate token count
-    embedding = Column(Vector(768), nullable=True)  # Gemini embedding-001
-    embedding_model = Column(String(100), default="text-embedding-3-small")
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    embedding = Column(Vector(768), nullable=True)  # gemini-embedding-001 @ 768-d
+    embedding_model = Column(String(100), default="gemini-embedding-001")
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
 
     # Relationships
     document = relationship("Document", back_populates="chunks")
@@ -82,7 +86,7 @@ class QueryLog(Base):
     response = Column(Text, nullable=True)
     retrieved_chunks_count = Column(Integer, default=0)
     response_time_ms = Column(Float, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=_utcnow, nullable=False)
 
     def __repr__(self):
         return f"<QueryLog(id={self.id}, user_id={self.user_id})>"

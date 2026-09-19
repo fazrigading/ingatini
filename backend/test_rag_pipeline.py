@@ -1,12 +1,9 @@
-"""Test script for RAG pipeline."""
 import requests
 import json
 from pathlib import Path
 
-# Configuration
 API_BASE_URL = "http://localhost:8000/api"
 
-# Test data
 TEST_USER = {
     "username": "test_user_1",
     "email": "test_user_1@example.com"
@@ -16,7 +13,6 @@ TEST_QUERY = "What is the main topic of the document?"
 
 
 def test_health_check():
-    """Test health endpoint."""
     print("\n🏥 Testing Health Check...")
     response = requests.get(f"{API_BASE_URL}/health")
     assert response.status_code == 200
@@ -25,7 +21,6 @@ def test_health_check():
 
 
 def test_create_user():
-    """Test user creation."""
     print("\n👤 Creating Test User...")
     response = requests.post(
         f"{API_BASE_URL}/users/",
@@ -50,7 +45,6 @@ def test_create_user():
 
 
 def test_upload_document(user_id: int, file_path: str):
-    """Test document upload."""
     print(f"\n📄 Uploading Document: {file_path}...")
     
     if not Path(file_path).exists():
@@ -113,7 +107,6 @@ Benefits:
 
 
 def test_list_documents(user_id: int):
-    """Test listing documents."""
     print(f"\n📚 Listing Documents for User {user_id}...")
     
     response = requests.get(f"{API_BASE_URL}/documents/{user_id}")
@@ -129,7 +122,6 @@ def test_list_documents(user_id: int):
 
 
 def test_query_documents(user_id: int, query_text: str = TEST_QUERY):
-    """Test RAG query."""
     print(f"\n🔍 Querying Documents...")
     print(f"Query: {query_text}")
     
@@ -152,7 +144,6 @@ def test_query_documents(user_id: int, query_text: str = TEST_QUERY):
 
 
 def test_query_history(user_id: int):
-    """Test query history."""
     print(f"\n📋 Fetching Query History for User {user_id}...")
     
     response = requests.get(f"{API_BASE_URL}/query/history/{user_id}")
@@ -168,30 +159,18 @@ def test_query_history(user_id: int):
 
 
 def run_all_tests():
-    """Run all tests in sequence."""
     print("=" * 60)
     print("🚀 Ingatini RAG Pipeline Test Suite")
     print("=" * 60)
     
     try:
-        # Health check
         test_health_check()
-        
-        # User management
         user_id = test_create_user()
-        
-        # Document upload
         doc_id, chunk_count = test_upload_document(user_id, "test_document.txt")
-        
-        # List documents
         test_list_documents(user_id)
-        
-        # Query
         test_query_documents(user_id)
         test_query_documents(user_id, "What is the technical stack?")
         test_query_documents(user_id, "How does the system work?")
-        
-        # Query history
         test_query_history(user_id)
         
         print("\n" + "=" * 60)

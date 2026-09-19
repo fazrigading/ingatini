@@ -1,4 +1,3 @@
-"""Application configuration using environment variables."""
 from functools import lru_cache
 from typing import List
 
@@ -13,8 +12,13 @@ class Settings(BaseSettings):
 
     # Google Gemini
     gemini_api_key: str = ""
-    gemini_embedding_model: str = "models/embedding-001"
-    gemini_llm_model: str = "gemini-pro"
+    gemini_embedding_model: str = "models/gemini-embedding-001"
+    gemini_llm_model: str = "models/gemini-2.0-flash"
+
+    # Auth
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 1440  # 24 hours
 
     # Application
     debug: bool = True

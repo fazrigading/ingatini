@@ -1,4 +1,3 @@
-"""Document management service."""
 from app.models import Document
 from app.services.base import BaseService
 

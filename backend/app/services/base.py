@@ -1,4 +1,3 @@
-"""Base service class for business logic."""
 from abc import ABC
 
 

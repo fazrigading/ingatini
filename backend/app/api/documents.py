@@ -1,80 +1,93 @@
-"""Document management endpoints."""
 import logging
-from io import BytesIO
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.models import Document, User
 from app.schemas import DocumentResponse, DocumentUploadResponse
 from app.services.document_parser import extract_text_from_file
 from app.services.document_service import DocumentService
-from app.services.embedding_service import EmbeddingService
+from app.services.embedding_service import EmbeddingError, EmbeddingService
+from app.services.errors import ParsingError
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["documents"])
 
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt"}
+
+
+def _validate_upload(file: UploadFile) -> None:
+    """Reject oversize files and disallowed types before reading the body."""
+    ext = "." + file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
+        )
+    if file.size is not None and file.size > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
+
 
 @router.post("/upload", response_model=DocumentUploadResponse)
-async def upload_document(
-    user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
+def upload_document(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """Upload and process a document with embedding pipeline.
-    
-    Supports: PDF, DOCX, TXT files.
-    """
-    # Verify user exists
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    """Upload and process a document with the embedding pipeline.
 
-    # Read file content
+    Supports PDF, DOCX, TXT files up to 10 MB.
+    """
+    _validate_upload(file)
+
     try:
-        file_content = await file.read()
-    except Exception as e:
-        logger.error(f"Failed to read file: {str(e)}")
+        file_content = file.file.read(MAX_UPLOAD_BYTES + 1)
+    except Exception:
+        logger.exception("Failed to read uploaded file")
         raise HTTPException(status_code=400, detail="Failed to read uploaded file")
 
-    # Create document service
+    if len(file_content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
+
     doc_service = DocumentService(db)
-    
-    # Create document record
+
     try:
         document = doc_service.create_document(
-            user_id=user_id,
+            user_id=current_user.id,
             filename=file.filename,
             file_size=len(file_content),
+            content_type=file.content_type,
         )
-    except Exception as e:
-        logger.error(f"Failed to create document: {str(e)}")
+    except Exception:
+        logger.exception("Failed to create document record")
         raise HTTPException(status_code=500, detail="Failed to create document record")
 
-    # Extract text from file
     try:
         extracted_text = extract_text_from_file(file.filename, file_content)
-    except ValueError as e:
-        logger.error(f"Unsupported file format: {str(e)}")
+    except ParsingError as e:
+        logger.error("Unsupported file format: %s", e)
         doc_service.delete_document(document.id)
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Failed to extract text: {str(e)}")
+    except Exception:
+        logger.exception("Failed to extract text from document %s", document.id)
         doc_service.delete_document(document.id)
         raise HTTPException(status_code=500, detail="Failed to extract text from document")
 
-    # Generate embeddings
     try:
         embedding_service = EmbeddingService(db)
         chunk_count = embedding_service.embed_document(document.id, extracted_text)
-        logger.info(f"Created {chunk_count} chunks for document {document.id}")
-    except ValueError as e:
-        logger.error(f"Invalid configuration: {str(e)}")
+        logger.info("Created %d chunks for document %d", chunk_count, document.id)
+    except EmbeddingError:
         doc_service.delete_document(document.id)
-        raise HTTPException(status_code=500, detail="Embedding service not configured")
-    except Exception as e:
-        logger.error(f"Failed to generate embeddings: {str(e)}")
+        logger.exception("Embedding failed for document %s", document.id)
+        raise HTTPException(status_code=502, detail="Embedding service unavailable")
+    except Exception:
+        logger.exception("Failed to process document %s", document.id)
         doc_service.delete_document(document.id)
-        raise HTTPException(status_code=500, detail=f"Failed to process document: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process document")
 
     return DocumentUploadResponse(
         id=document.id,
@@ -84,30 +97,46 @@ async def upload_document(
     )
 
 
-@router.get("/{user_id}", response_model=list[DocumentResponse])
-def list_user_documents(user_id: int, db: Session = Depends(get_db)):
-    """Get all documents for a user."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    documents = db.query(Document).filter(Document.user_id == user_id).all()
+@router.get("", response_model=list[DocumentResponse])
+def list_documents(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    """Get all documents owned by the authenticated user."""
+    documents = (
+        db.query(Document).filter(Document.user_id == current_user.id).all()
+    )
     return documents
 
 
 @router.get("/{doc_id}", response_model=DocumentResponse)
-def get_document(doc_id: int, db: Session = Depends(get_db)):
-    """Get a specific document."""
-    document = db.query(Document).filter(Document.id == doc_id).first()
+def get_document(
+    doc_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get a specific document owned by the authenticated user."""
+    document = (
+        db.query(Document)
+        .filter(Document.id == doc_id, Document.user_id == current_user.id)
+        .first()
+    )
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
     return document
 
 
 @router.delete("/{doc_id}")
-def delete_document(doc_id: int, db: Session = Depends(get_db)):
-    """Delete a document and its chunks."""
-    document = db.query(Document).filter(Document.id == doc_id).first()
+def delete_document(
+    doc_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a document owned by the authenticated user."""
+    document = (
+        db.query(Document)
+        .filter(Document.id == doc_id, Document.user_id == current_user.id)
+        .first()
+    )
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 

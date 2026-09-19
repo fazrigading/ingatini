@@ -1,6 +1,9 @@
 #!/bin/bash
 # Quick start script for local development
 
+# Always operate from the repo root (compose file lives there)
+cd "$(dirname "$0")/.."
+
 echo "🚀 Ingatini Setup Script"
 echo "========================"
 

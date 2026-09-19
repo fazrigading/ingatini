@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.core.database import Base, engine
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=settings.log_level.upper())
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
@@ -20,7 +20,7 @@ Base.metadata.create_all(bind=engine)
 # Create FastAPI app instance
 app = FastAPI(
     title="Ingatini RAG API",
-    description="A personal knowledge search engine using Light RAG",
+    description="A Gemini-powered personal knowledge search engine using Light RAG",
     version="0.1.0",
     debug=settings.debug,
 )

@@ -1,1 +1,0 @@
-"""Ingatini RAG application package."""
