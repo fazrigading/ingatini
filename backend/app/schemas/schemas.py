@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -12,10 +12,10 @@ class UserBase(BaseModel):
     email: str = Field(..., pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
-class UserCreate(UserBase):
-    """Schema for creating a new user."""
+class RegisterRequest(UserBase):
+    """Schema for registering a new account."""
 
-    pass
+    password: str = Field(..., min_length=8, max_length=128)
 
 
 class UserResponse(UserBase):
@@ -29,17 +29,20 @@ class UserResponse(UserBase):
         from_attributes = True
 
 
+# Auth Schemas
+class TokenResponse(BaseModel):
+    """Schema for the login response."""
+
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+
+
 # Document Schemas
 class DocumentBase(BaseModel):
     """Base document schema."""
 
     filename: str = Field(..., min_length=1, max_length=255)
-
-
-class DocumentCreate(DocumentBase):
-    """Schema for uploading a document."""
-
-    user_id: int
 
 
 class DocumentResponse(DocumentBase):
@@ -57,27 +60,24 @@ class DocumentResponse(DocumentBase):
         from_attributes = True
 
 
-# Chunk Schemas
-class ChunkResponse(BaseModel):
-    """Schema for chunk response."""
+# Query Schemas
+class QueryRequest(BaseModel):
+    """Schema for a user query."""
+
+    query_text: str = Field(..., min_length=1, max_length=2000)
+    document_ids: Optional[List[int]] = None
+    top_k: int = Field(5, ge=1, le=20)
+
+
+class RetrievedChunk(BaseModel):
+    """A chunk retrieved by vector search, with its similarity score."""
 
     id: int
     document_id: int
     chunk_index: int
     content: str
     token_count: Optional[int] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-# Query Schemas
-class QueryRequest(BaseModel):
-    """Schema for a user query."""
-
-    user_id: int
-    query_text: str = Field(..., min_length=1, max_length=2000)
+    similarity: float
 
 
 class QueryResponse(BaseModel):
@@ -85,26 +85,8 @@ class QueryResponse(BaseModel):
 
     query_text: str
     response: str
-    retrieved_chunks: list[ChunkResponse]
+    retrieved_chunks: list[RetrievedChunk]
     response_time_ms: float
-
-    class Config:
-        from_attributes = True
-
-
-class QueryLogResponse(BaseModel):
-    """Schema for query log."""
-
-    id: int
-    user_id: int
-    query_text: str
-    response: Optional[str] = None
-    retrieved_chunks_count: int
-    response_time_ms: Optional[float] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # Upload Response
