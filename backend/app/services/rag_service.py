@@ -4,8 +4,9 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import Chunk, QueryLog, User
+from app.models import Chunk, QueryLog
 from app.services.embedding_service import EmbeddingService
+from app.services.errors import LLMError
 
 logger = logging.getLogger(__name__)
 
@@ -23,10 +24,10 @@ class RAGService:
         self.db = db
         self.settings = get_settings()
         self.embedding_service = EmbeddingService(db)
-        
+
         if genai is None:
             raise ImportError("google-generativeai is required")
-        
+
         genai.configure(api_key=self.settings.gemini_api_key)
 
     def query_documents(
@@ -37,82 +38,60 @@ class RAGService:
         top_k: int = 5,
     ) -> dict:
         """
-        Query documents using RAG pipeline.
-        
+        Query documents using the RAG pipeline.
+
         Steps:
-        1. Verify user exists
-        2. Retrieve relevant chunks using vector search
-        3. Augment with LLM for final response
-        4. Log the query
-        
+        1. Retrieve relevant chunks using owner-scoped vector search
+        2. Augment with LLM for final response
+        3. Log the query
+
         Args:
-            user_id: User ID
+            user_id: Authenticated user ID (search is scoped to their documents)
             query_text: Query text
-            document_ids: Filter to specific documents
+            document_ids: Optional narrowing to specific documents
             top_k: Number of chunks to retrieve
-        
+
         Returns:
             Dict with query, response, and retrieved chunks
         """
-        # Verify user exists
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise ValueError(f"User {user_id} not found")
-
-        # Retrieve similar chunks
-        retrieved_chunks = self.embedding_service.search_similar_chunks(
+        retrieved = self.embedding_service.search_similar_chunks(
+            user_id=user_id,
             query_text=query_text,
             document_ids=document_ids,
             top_k=top_k,
         )
 
-        if not retrieved_chunks:
-            logger.warning(f"No similar chunks found for query: {query_text}")
+        if not retrieved:
+            logger.warning("No similar chunks found for query: %s", query_text)
             response = "No relevant information found in your documents."
             chunks_data = []
         else:
-            # Build context from retrieved chunks
-            context = "\n\n".join([
-                f"[Document {c.document_id}, Chunk {c.chunk_index}]:\n{c.content}"
-                for c in retrieved_chunks
-            ])
+            context = "\n\n".join(
+                [
+                    f"[Document {chunk.document_id}, Chunk {chunk.chunk_index}]:\n{chunk.content}"
+                    for chunk, _ in retrieved
+                ]
+            )
 
-            # Generate LLM response
-            try:
-                model = genai.GenerativeModel(self.settings.gemini_llm_model)
-                prompt = f"""You are a helpful assistant that answers questions based on the provided context. Always cite your sources from the context.
+            response = self._generate_answer(context, query_text)
 
-Context:
-{context}
-
-Question: {query_text}
-
-Provide a comprehensive answer based on the context."""
-                
-                llm_response = model.generate_content(prompt)
-                response = llm_response.text
-            except Exception as e:
-                logger.error(f"Failed to generate LLM response: {str(e)}")
-                response = f"Error generating response: {str(e)}"
-
-            # Prepare chunks data
             chunks_data = [
                 {
-                    "id": c.id,
-                    "document_id": c.document_id,
-                    "chunk_index": c.chunk_index,
-                    "content": c.content,
-                    "token_count": c.token_count,
+                    "id": chunk.id,
+                    "document_id": chunk.document_id,
+                    "chunk_index": chunk.chunk_index,
+                    "content": chunk.content,
+                    "token_count": chunk.token_count,
+                    "similarity": round(similarity, 4),
                 }
-                for c in retrieved_chunks
+                for chunk, similarity in retrieved
             ]
 
-        # Log the query
         query_log = QueryLog(
             user_id=user_id,
             query_text=query_text,
-            response=response[:500],  # Store first 500 chars
-            retrieved_chunks_count=len(retrieved_chunks),
+            response=response,
+            retrieved_chunks_count=len(retrieved),
         )
         self.db.add(query_log)
         self.db.commit()
@@ -121,8 +100,27 @@ Provide a comprehensive answer based on the context."""
             "query": query_text,
             "response": response,
             "retrieved_chunks": chunks_data,
-            "chunk_count": len(retrieved_chunks),
+            "chunk_count": len(retrieved),
         }
+
+    def _generate_answer(self, context: str, query_text: str) -> str:
+        """Generate an LLM answer from context; raises LLMError on failure."""
+        model = genai.GenerativeModel(self.settings.gemini_llm_model)
+        prompt = f"""You are a helpful assistant that answers questions based on the provided context. Always cite your sources from the context. If the context does not contain the answer, say so.
+
+Context:
+{context}
+
+Question: {query_text}
+
+Provide a comprehensive answer based on the context."""
+
+        try:
+            llm_response = model.generate_content(prompt)
+            return llm_response.text
+        except Exception as e:
+            logger.error("Failed to generate LLM response: %s", e)
+            raise LLMError(f"LLM generation failed: {e}")
 
     def get_query_history(self, user_id: int, limit: int = 10) -> List[dict]:
         """Get query history for a user."""

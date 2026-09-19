@@ -1,5 +1,4 @@
 import io
-from typing import Optional
 
 try:
     from pypdf import PdfReader
@@ -11,12 +10,14 @@ try:
 except ImportError:
     DocxDocument = None
 
+from app.services.errors import ParsingError
 
-def extract_text_from_pdf(file_content: bytes) -> Optional[str]:
+
+def extract_text_from_pdf(file_content: bytes) -> str:
     """Extract text from PDF file."""
     if PdfReader is None:
         raise ImportError("pypdf is required for PDF support. Install with: pip install pypdf")
-    
+
     try:
         pdf_reader = PdfReader(io.BytesIO(file_content))
         text = ""
@@ -24,14 +25,14 @@ def extract_text_from_pdf(file_content: bytes) -> Optional[str]:
             text += page.extract_text() + "\n"
         return text
     except Exception as e:
-        raise ValueError(f"Failed to extract PDF: {str(e)}")
+        raise ParsingError(f"Failed to extract PDF: {str(e)}")
 
 
-def extract_text_from_docx(file_content: bytes) -> Optional[str]:
+def extract_text_from_docx(file_content: bytes) -> str:
     """Extract text from DOCX file."""
     if DocxDocument is None:
         raise ImportError("python-docx is required for DOCX support. Install with: pip install python-docx")
-    
+
     try:
         doc = DocxDocument(io.BytesIO(file_content))
         text = ""
@@ -39,15 +40,18 @@ def extract_text_from_docx(file_content: bytes) -> Optional[str]:
             text += paragraph.text + "\n"
         return text
     except Exception as e:
-        raise ValueError(f"Failed to extract DOCX: {str(e)}")
+        raise ParsingError(f"Failed to extract DOCX: {str(e)}")
 
 
 def extract_text_from_txt(file_content: bytes) -> str:
     """Extract text from TXT file."""
     try:
-        return file_content.decode('utf-8', errors='ignore')
-    except Exception as e:
-        raise ValueError(f"Failed to extract TXT: {str(e)}")
+        return file_content.decode("utf-8")
+    except UnicodeDecodeError:
+        try:
+            return file_content.decode("latin-1")
+        except Exception as e:
+            raise ParsingError(f"Failed to extract TXT: {str(e)}")
 
 
 def extract_text_from_file(filename: str, file_content: bytes) -> str:
@@ -68,4 +72,4 @@ def extract_text_from_file(filename: str, file_content: bytes) -> str:
     elif filename_lower.endswith('.txt'):
         return extract_text_from_txt(file_content)
     else:
-        raise ValueError(f"Unsupported file format: {filename}")
+        raise ParsingError(f"Unsupported file format: {filename}")
