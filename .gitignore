@@ -82,9 +82,11 @@ temp/
 /*.md
 /*.txt
 !README.md
-!GETTING_STARTED.md 
-!IMPLEMENTATION.md 
 .claude
+
+# Local-only product doc and historical status artifacts
+docs/PRODUCT_REQUIREMENTS.md
+docs/archive/
 
 
 # Command Code local data
