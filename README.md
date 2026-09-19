@@ -1,206 +1,90 @@
-# Ingatini: A Personal Knowledge Search Engine
+# Ingatini — Personal Knowledge Search Engine
 
-A complete Retrieval-Augmented Generation (RAG) application for uploading documents and asking AI-powered questions about them. Full-stack implementation with FastAPI backend, React frontend, PostgreSQL database, and Google Gemini API.
+A Retrieval-Augmented Generation (RAG) application: upload documents, ask
+AI-powered questions about them, and get answers with source attribution.
+Built with FastAPI, PostgreSQL + pgvector, Google Gemini, and React.
 
-## 🎯 Core Idea
+## How it works
 
-1. User registers and uploads documents (PDF, DOCX, TXT)
-2. System extracts text and creates embeddings via Gemini API
-3. Embeddings stored in PostgreSQL with pgvector
-4. User asks questions via React chat interface
-5. RAG pipeline retrieves relevant chunks and augments Gemini response with context
-6. Source attribution shows which documents contributed to each answer
+1. Register an account and log in (JWT-secured)
+2. Upload documents (PDF, DOCX, TXT — up to 10 MB)
+3. The backend extracts text, chunks it sentence-by-sentence, and stores
+   768-dim Gemini embeddings in PostgreSQL with pgvector
+4. Ask questions in the chat interface — the pipeline retrieves the most
+   similar chunks from **your** documents and has Gemini answer with context
+5. Every answer cites its sources with similarity scores; full query history is kept
 
-## 📋 Project Status
+## Features
 
-| Phase | Task | Status |
-|-------|------|--------|
-| 1 | Backend structure & DB schema | ✅ Complete |
-| 2 | Embedding pipeline & document processing | ✅ Complete |
-| 3 | RAG query engine & retrieval | ✅ Complete |
-| 4 | Frontend UI (React/Vite) | ✅ Complete |
-| 5 | Authentication (Optional) | 📅 Future |
+- **JWT authentication** — register/login, per-user data isolation at the API and vector-search level
+- **Document upload** — PDF, DOCX, TXT with size/type validation and rollback on processing failure
+- **RAG Q&A** — owner-scoped cosine similarity search (threshold 0.5), batched embeddings with retry
+- **Query history** — searchable log of past questions, answers, and chunk counts
+- **Document management** — list and delete your uploads
 
-**Overall Progress:** 80% Complete (Full Stack MVP Ready)
+## Quick start
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for frontend dev)
-- GEMINI_API_KEY environment variable
-
-### Run Full Stack
+Prerequisites: Docker, Node.js 18+, a [Gemini API key](https://ai.google.dev/).
 
 ```bash
-# 1. Start backend and database
+# 1. Configure
+cp .env.example .env            # then add your GEMINI_API_KEY
+
+# 2. Start backend + database
 docker compose up
 
-# 2. In another terminal, start frontend
-cd frontend
-npm install  # (first time only)
-npm run dev
+# 3. Start frontend (new terminal)
+cd frontend && npm install && npm run dev
 ```
 
-**Backend API**: http://localhost:8000  
-**API Docs**: http://localhost:8000/docs  
-**Frontend App**: http://localhost:5173
+- Frontend: http://localhost:5173
+- API: http://localhost:8000/api — Swagger docs at http://localhost:8000/docs
 
-See [END_TO_END_TESTING.md](END_TO_END_TESTING.md) for complete testing guide.
+> Already ran a previous version? The schema changed (`users.password_hash`).
+> Reset the dev database once: `docker compose down -v` before `up`.
 
-## 🏗️ Architecture
+For local development without Docker, see [GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
-### Backend Stack
-- **Framework**: FastAPI 0.109.0 (Python async)
-- **Database**: PostgreSQL 15 + pgvector 0.2.4
-- **ORM**: SQLAlchemy 2.0.23
-- **AI**: Google Gemini API (embeddings + LLM)
-- **RAG**: LangChain + custom pipeline
-- **API**: RESTful with Swagger/OpenAPI docs
-
-### Frontend Stack
-- **Framework**: React 19.2.0
-- **Build Tool**: Vite 7.3.1
-- **Styling**: Tailwind CSS 4.x
-- **HTTP Client**: Axios
-- **State**: React hooks (useState, useEffect, useRef)
-
-### Database Schema
-- **Users** — User accounts & session management
-- **Documents** — Document metadata, file info, chunk count
-- **Chunks** — Text segments (512 chars, 50 char overlap) with 768-dim embeddings
-- **QueryLogs** — Query history with responses, timing, source attribution
-
-## 📁 Project Structure
-
-```
-ingatini/
-├── backend/                    # FastAPI application
-│   ├── app/
-│   │   ├── core/
-│   │   │   ├── config.py      # Settings from environment
-│   │   │   └── database.py    # SQLAlchemy setup
-│   │   ├── api/               # Endpoint handlers
-│   │   │   ├── users.py
-│   │   │   ├── documents.py
-│   │   │   ├── query.py
-│   │   │   └── health.py
-│   │   ├── schemas/           # Pydantic models (request/response)
-│   │   ├── models/            # SQLAlchemy ORM models
-│   │   └── services/          # Business logic
-│   │       ├── embedding_service.py    # Gemini embeddings
-│   │       ├── rag_service.py          # RAG pipeline
-│   │       ├── document_service.py
-│   │       ├── document_parser.py      # PDF/DOCX/TXT extraction
-│   │       └── text_processor.py       # Chunking & normalization
-│   ├── main.py                # FastAPI app entry point
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── README.md
-│
-├── frontend/                  # React + Vite app
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── DocumentUpload.jsx     # File upload interface
-│   │   │   ├── ChatInterface.jsx      # Chat & query interface
-│   │   │   └── QueryHistory.jsx       # Past queries display
-│   │   ├── services/
-│   │   │   └── api.js                 # Axios API client
-│   │   ├── App.jsx            # Main app component
-│   │   ├── App.css
-│   │   ├── index.css          # Global + Tailwind styles
-│   │   └── main.jsx           # React entry point
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   ├── .env.example
-│   └── README.md
-│
-├── docker-compose.yml          # Development environment
-├── .env                        # Environment variables (git ignored)
-├── .env.example                # Environment template
-│
-├── Documentation/
-│   ├── README.md              # This file
-│   ├── GETTING_STARTED.md     # Setup & configuration guide
-│   ├── STATUS.md              # Current completion status
-│   ├── IMPLEMENTATION.md      # Detailed progress tracking
-│   ├── COMPLETION_SUMMARY.md  # Phase-by-phase summary
-│   ├── PHASE4_COMPLETION.md   # Frontend phase details
-│   ├── END_TO_END_TESTING.md  # Complete testing guide
-│   ├── QUICK_REF.sh           # Quick reference
-│   └── FRONTEND_GUIDE.md      # Frontend setup guide
-│
-├── dev                        # Development CLI helper script
-└── start.sh                   # Quick start script
-```
-
-## 🔧 Development
-
-### Using Dev Helper
-
-```bash
-./dev start       # Start development
-./dev logs        # View logs
-./dev shell       # Access container
-./dev test        # Run tests
-./dev format      # Format code
-```
-
-### API Endpoints
-
-```
-POST   /api/users/                  # Create user
-GET    /api/users/{id}              # Get user
-POST   /api/documents/upload        # Upload document
-GET    /api/documents/{user_id}     # List documents
-POST   /api/query/                  # Query documents (RAG)
-```
-
-## 📚 Stack
+## Stack
 
 | Layer | Technology |
 |-------|-----------|
-| **API** | FastAPI 0.109 |
-| **Database** | PostgreSQL 15 + pgvector |
-| **ORM** | SQLAlchemy 2.0 |
-| **RAG** | LangChain + Gemini |
-| **Embedding** | gemini-embedding-1.0 |
-| **LLM** | gemini-3-flash |
-| **Frontend** | React/Vite (TODO) |
-| **Containerization** | Docker + Docker Compose |
+| API | FastAPI |
+| Database | PostgreSQL 15 + pgvector |
+| Embeddings | `gemini-embedding-001` @ 768-dim |
+| LLM | `gemini-2.0-flash` |
+| Auth | JWT (HS256) + bcrypt |
+| Frontend | React 19 + Vite 7 + Tailwind CSS 4 |
 
-## ⚙️ Configuration
+## Configuration
 
-Create `.env` from `.env.example`:
+All settings come from environment variables (`.env`, see `.env.example`):
+`DATABASE_URL`, `GEMINI_API_KEY`, `JWT_SECRET`, `GEMINI_EMBEDDING_MODEL`,
+`GEMINI_LLM_MODEL`, `CORS_ORIGINS`, and friends. Full list in
+[GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/ingatini_db
-GEMINI_API_KEY=your_key_here
-GEMINI_EMBEDDING_MODEL=gemini-embedding-1.0
-GEMINI_LLM_MODEL=gemini-3-flash
-DEBUG=True
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [GETTING_STARTED.md](docs/GETTING_STARTED.md) | Setup, env vars, dev workflow, troubleshooting |
+| [docs/API.md](docs/API.md) | Full API reference with examples |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack, request flows, data model, layout |
+| [docs/TESTING.md](docs/TESTING.md) | Unit tests + end-to-end walkthrough |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production checklist |
+| [IMPLEMENTATION.md](docs/IMPLEMENTATION.md) | Implementation status & roadmap |
+| [backend/README.md](backend/README.md) | Backend development |
+| [frontend/README.md](frontend/README.md) | Frontend development |
+
+## Development helpers
+
+```bash
+./dev start      # start the stack
+./dev logs       # tail logs
+./dev test       # run backend tests
+./dev stop       # stop everything
 ```
 
-## 📖 Documentation
-
-- [GETTING_STARTED.md](GETTING_STARTED.md) — Setup & usage guide
-- [IMPLEMENTATION.md](IMPLEMENTATION.md) — Progress & architecture
-- [backend/README.md](backend/README.md) — Backend development
-- [frontend/README.md](frontend/README.md) — Frontend development
-
-## 🛠️ Automation (Post-Development)
-
-After MVP completion, integrate with n8n:
-- Trigger: New file uploaded
-- Action: Call embedding pipeline API
-- Result: Auto-insert embeddings to database
-
-## 📝 License
+## License
 
 MIT
-
----
-
-**Next**: See [GETTING_STARTED.md](GETTING_STARTED.md) to begin developing!
