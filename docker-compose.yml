@@ -23,6 +23,7 @@ services:
     environment:
       DATABASE_URL: postgresql://user:password@postgres:5432/ingatini_db
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret-change-me}
       DEBUG: "true"
     env_file:
       - .env
