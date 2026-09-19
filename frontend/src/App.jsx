@@ -1,37 +1,76 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
 import DocumentUpload from './components/DocumentUpload';
 import ChatInterface from './components/ChatInterface';
 import QueryHistory from './components/QueryHistory';
-import { createUser, getDocuments, healthCheck } from './services/api';
+import {
+  register,
+  login,
+  getDocuments,
+  deleteDocument,
+  healthCheck,
+  setToken,
+  getToken,
+} from './services/api';
 
 export default function App() {
-  const [userId, setUserId] = useState(null);
+  const [user, setUser] = useState(null);
+  const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [docError, setDocError] = useState(null);
   const [apiStatus, setApiStatus] = useState('checking');
-
-  // Check API health on mount
-  useEffect(() => {
-    checkApiHealth();
-  }, []);
 
   const checkApiHealth = async () => {
     try {
       await healthCheck();
       setApiStatus('connected');
-    } catch (err) {
+    } catch {
       setApiStatus('disconnected');
     }
   };
 
-  const handleCreateOrGetUser = async (e) => {
+  // Check API health on mount, then poll
+  useEffect(() => {
+    checkApiHealth();
+    const interval = setInterval(checkApiHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Restore session and load documents if a token exists
+  useEffect(() => {
+    if (getToken()) {
+      fetchDocuments();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await getDocuments();
+      setDocuments(response.data);
+      setDocError(null);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        handleLogout();
+        return;
+      }
+      setDocError(err.response?.data?.detail || 'Failed to load documents');
+    }
+  };
+
+  const handleAuth = async (e) => {
     e.preventDefault();
 
-    if (!username.trim()) {
-      setError('Please enter a username');
+    if (!username.trim() || !password) {
+      setError('Username and password are required');
+      return;
+    }
+    if (mode === 'register' && !email.trim()) {
+      setError('Email is required');
       return;
     }
 
@@ -39,32 +78,128 @@ export default function App() {
     setError(null);
 
     try {
-      const response = await createUser({
-        username: username,
-        email: `${username}@ingatini.local`,
-      });
-      setUserId(response.data.id);
-      fetchDocuments(response.data.id);
-      setUsername('');
+      if (mode === 'register') {
+        const response = await register({
+          username: username.trim(),
+          email: email.trim(),
+          password,
+        });
+        const loginResponse = await login(username.trim(), password);
+        setToken(loginResponse.data.access_token);
+        setUser(loginResponse.data.user);
+      } else {
+        const response = await login(username.trim(), password);
+        setToken(response.data.access_token);
+        setUser(response.data.user);
+      }
+      setPassword('');
+      fetchDocuments();
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create user');
+      setError(err.response?.data?.detail || 'Authentication failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchDocuments = async (id) => {
+  const handleLogout = () => {
+    setToken(null);
+    setUser(null);
+    setDocuments([]);
+    setUsername('');
+    setEmail('');
+    setPassword('');
+    setError(null);
+    setDocError(null);
+  };
+
+  const handleDeleteDocument = async (docId) => {
     try {
-      const response = await getDocuments(id);
-      setDocuments(response.data);
+      await deleteDocument(docId);
+      setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
     } catch (err) {
-      console.error('Failed to load documents:', err);
+      setDocError(err.response?.data?.detail || 'Failed to delete document');
     }
   };
 
   const handleUploadSuccess = (uploadedDoc) => {
-    setDocuments((prev) => [...prev, uploadedDoc]);
+    setDocuments((prev) => [...prev, { ...uploadedDoc, total_chunks: uploadedDoc.total_chunks }]);
   };
+
+  const authForm = (
+    <div className="max-w-md mx-auto mb-8">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          {mode === 'login' ? 'Welcome back' : 'Create an account'}
+        </h2>
+
+        <form onSubmit={handleAuth} className="space-y-4">
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g., john_doe"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              disabled={loading}
+            />
+          </div>
+
+          {mode === 'register' && (
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g., john@example.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                disabled={loading}
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={mode === 'register' ? 'At least 8 characters' : 'Your password'}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              disabled={loading}
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || !username.trim() || !password}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+          >
+            {loading ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Sign up'}
+          </button>
+        </form>
+
+        <button
+          onClick={() => {
+            setMode(mode === 'login' ? 'register' : 'login');
+            setError(null);
+          }}
+          className="mt-4 text-sm text-blue-600 hover:text-blue-700"
+        >
+          {mode === 'login'
+            ? "Don't have an account? Sign up"
+            : 'Already have an account? Log in'}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
@@ -99,85 +234,65 @@ export default function App() {
           </div>
         </div>
 
-        {!userId ? (
-          // User Setup Section
-          <div className="max-w-md mx-auto mb-8">
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-800">
-                Get Started
-              </h2>
-
-              <form onSubmit={handleCreateOrGetUser} className="space-y-4">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2">
-                    Enter your username
-                  </label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="e.g., john_doe"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    disabled={loading}
-                  />
-                </div>
-
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading || !username.trim()}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-                >
-                  {loading ? 'Creating...' : 'Continue'}
-                </button>
-              </form>
-            </div>
-          </div>
+        {!user ? (
+          authForm
         ) : (
-          // Main Application Section
           <>
             <div className="mb-6 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-800">
-                Welcome, {username || `User ${userId}`}!
+                Welcome, {user.username}!
               </h2>
               <button
-                onClick={() => setUserId(null)}
+                onClick={handleLogout}
                 className="text-gray-600 hover:text-gray-800 font-medium"
               >
-                Switch User
+                Log out
               </button>
             </div>
 
             {documents.length > 0 && (
-              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-900">
+              <div className="mb-6 bg-white rounded-lg shadow p-4">
+                <p className="text-blue-900 mb-2">
                   <span className="font-semibold">{documents.length}</span>{' '}
                   document(s) uploaded
                 </p>
+                <ul className="divide-y divide-gray-100">
+                  {documents.map((doc) => (
+                    <li key={doc.id} className="flex justify-between items-center py-2">
+                      <span className="text-sm text-gray-700">{doc.filename}</span>
+                      <span className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">
+                          {doc.total_chunks} chunks
+                        </span>
+                        <button
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="text-xs text-red-600 hover:text-red-700"
+                        >
+                          Delete
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {docError && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {docError}
               </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column */}
               <div className="lg:col-span-1 space-y-6">
-                <DocumentUpload
-                  userId={userId}
-                  onUploadSuccess={handleUploadSuccess}
-                />
-                <QueryHistory userId={userId} />
+                <DocumentUpload onUploadSuccess={handleUploadSuccess} />
+                <QueryHistory />
               </div>
 
               {/* Right Column */}
               <div className="lg:col-span-2">
-                <ChatInterface
-                  userId={userId}
-                  documentIds={documents.map((doc) => doc.id)}
-                />
+                <ChatInterface documentIds={documents.map((doc) => doc.id)} />
               </div>
             </div>
           </>

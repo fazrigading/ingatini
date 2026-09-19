@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { uploadDocument } from '../services/api';
 
-export default function DocumentUpload({ userId, onUploadSuccess }) {
+export default function DocumentUpload({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,17 +20,12 @@ export default function DocumentUpload({ userId, onUploadSuccess }) {
       return;
     }
 
-    if (!userId) {
-      setError('User ID is required');
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const response = await uploadDocument(userId, file);
+      const response = await uploadDocument(file);
       setSuccess(`Document uploaded successfully! (${response.data.total_chunks} chunks)`);
       setFile(null);
       
@@ -61,7 +56,7 @@ export default function DocumentUpload({ userId, onUploadSuccess }) {
           <label htmlFor="file-input" className="cursor-pointer">
             <div className="text-gray-600">
               <p className="text-lg font-semibold mb-2">
-                {file ? file.name : 'Click to upload or drag and drop'}
+                {file ? file.name : 'Click to upload'}
               </p>
               <p className="text-sm text-gray-500">PDF, DOCX, or TXT files</p>
             </div>

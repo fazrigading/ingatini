@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { getQueryHistory } from '../services/api';
 
-export default function QueryHistory({ userId }) {
+export default function QueryHistory() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (userId) {
-      fetchHistory();
-    }
-  }, [userId]);
+    fetchHistory();
+  }, []);
 
   const fetchHistory = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await getQueryHistory(userId);
+      const response = await getQueryHistory();
       setHistory(response.data.history || []);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to load query history');
@@ -67,14 +65,14 @@ export default function QueryHistory({ userId }) {
           {history.map((item, idx) => (
             <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
               <div className="flex justify-between items-start mb-2">
-                <p className="font-semibold text-gray-800">{item.query_text}</p>
+                <p className="font-semibold text-gray-800">{item.query}</p>
                 <span className="text-xs text-gray-500">
                   {formatDate(item.created_at)}
                 </span>
               </div>
               <p className="text-gray-600 text-sm mb-2">{item.response}</p>
               <div className="text-xs text-gray-500">
-                Retrieved {item.retrieved_chunks_count || 0} chunk(s)
+                Retrieved {item.chunks_count || 0} chunk(s)
               </div>
             </div>
           ))}

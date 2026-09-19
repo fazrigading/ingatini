@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { queryDocuments } from '../services/api';
 
-export default function ChatInterface({ userId, documentIds = [] }) {
+export default function ChatInterface({ documentIds = [] }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -23,12 +22,6 @@ export default function ChatInterface({ userId, documentIds = [] }) {
       return;
     }
 
-    if (!userId) {
-      setError('User ID is required');
-      return;
-    }
-
-    // Add user message to chat
     const userMessage = {
       role: 'user',
       content: input,
@@ -36,15 +29,12 @@ export default function ChatInterface({ userId, documentIds = [] }) {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const queryText = input;
     setInput('');
     setLoading(true);
-    setError(null);
 
     try {
-      const queryPayload = {
-        user_id: userId,
-        query_text: input,
-      };
+      const queryPayload = { query_text: queryText };
 
       if (documentIds.length > 0) {
         queryPayload.document_ids = documentIds;
@@ -67,7 +57,6 @@ export default function ChatInterface({ userId, documentIds = [] }) {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
-      setError('Failed to send query');
     } finally {
       setLoading(false);
     }
@@ -108,7 +97,7 @@ export default function ChatInterface({ userId, documentIds = [] }) {
                   <ul className="list-disc list-inside">
                     {msg.chunks.slice(0, 3).map((chunk, i) => (
                       <li key={i} className="text-opacity-75">
-                        Doc {chunk.document_id}
+                        Doc {chunk.document_id} ({Math.round(chunk.similarity * 100)}% match)
                       </li>
                     ))}
                   </ul>
@@ -119,12 +108,6 @@ export default function ChatInterface({ userId, documentIds = [] }) {
         ))}
         <div ref={messagesEndRef} />
       </div>
-
-      {error && (
-        <div className="bg-red-50 border-t border-red-200 text-red-700 px-4 py-3">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="border-t p-4 bg-gray-50 rounded-b-lg">
         <div className="flex gap-2">
