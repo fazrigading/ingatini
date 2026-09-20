@@ -61,18 +61,18 @@ For local development without Docker, see [GETTING_STARTED.md](docs/GETTING_STAR
 All settings come from environment variables (`.env`, see `.env.example`):
 `DATABASE_URL`, `GEMINI_API_KEY`, `JWT_SECRET`, `GEMINI_EMBEDDING_MODEL`,
 `GEMINI_LLM_MODEL`, `CORS_ORIGINS`, and friends. Full list in
-[GETTING_STARTED.md](docs/GETTING_STARTED.md).
+[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
 
 ## Documentation
 
 | Doc | Contents |
 |-----|----------|
-| [GETTING_STARTED.md](docs/GETTING_STARTED.md) | Setup, env vars, dev workflow, troubleshooting |
+| [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | Setup, env vars, dev workflow, troubleshooting |
 | [docs/API.md](docs/API.md) | Full API reference with examples |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack, request flows, data model, layout |
 | [docs/TESTING.md](docs/TESTING.md) | Unit tests + end-to-end walkthrough |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production checklist |
-| [IMPLEMENTATION.md](docs/IMPLEMENTATION.md) | Implementation status & roadmap |
+| [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md) | Implementation status & roadmap |
 | [backend/README.md](backend/README.md) | Backend development |
 | [frontend/README.md](frontend/README.md) | Frontend development |
 
